@@ -1,0 +1,7 @@
+{
+  "name": "Remix 27.02: Bảng tiến độ",
+  "description": "Cập nhật ngày 07/04/2026",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

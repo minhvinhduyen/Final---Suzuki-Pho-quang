@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/jpeg" href="https://inkythuatso.com/uploads/thumbnails/800/2021/11/logo-suzuki-inkythuatso-2-01-15-15-18-29.jpg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bảng Tiến Độ Xưởng Dịch Vụ</title>
+    <script>
+      // --- CẤU HÌNH QUAN TRỌNG ---
+      // Khi copy sang file Sheet mới, bạn phải thực hiện Deploy lại để lấy URL mới.
+      // 1. Trên Sheet mới: Extensions > Apps Script > Deploy > New deployment
+      // 2. Chọn type: Web app
+      // 3. Execute as: Me
+      // 4. Who has access: Anyone (BẮT BUỘC)
+      // 5. Copy URL (có đuôi /exec) dán vào dưới đây:
+      
+      window.BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyVAfy_Ju3K08-spJYAbEbdBNRhUecGITOCbmrqEZgnkgus-8Mqc1PbUI3Kamz8myFo1g/exec'; 
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0"
+  }
+}
+</script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

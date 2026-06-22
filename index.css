@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-blue: #005A9E;
+  --color-brand-gold: #FDB913;
+  --color-status-inprogress: #3b82f6;
+  --color-status-completed: #22c55e;
+  --color-status-washing: #0ea5e9;
+  --color-status-ready: #84cc16;
+  --color-status-appointment: #ef4444;
+  --color-status-ticket-opened: #8b5cf6;
+  --color-status-paused: #f97316;
+}
+
+@layer base {
+  *, ::after, ::before, ::-webkit-details-marker {
+    border-color: var(--color-gray-200, #e5e7eb);
+  }
+}
+
+
