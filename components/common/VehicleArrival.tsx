@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { useApp } from '../../hooks/useApp';
 import { Job, JobStatus, JobType, Vehicle } from '../../types';
 
@@ -238,8 +238,11 @@ const VehicleArrival: React.FC = () => {
             contents: {
                 parts: [
                     { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
-                    { text: "Trích xuất biển số xe từ hình ảnh này. Chỉ trả về chuỗi biển số (ví dụ: 59A-123.45). Không thêm bất kỳ văn bản nào khác." }
+                    { text: "Nhận diện biển số xe Việt Nam. Chỉ trả về chuỗi biển số đúng định dạng (VD: 30A-123.45 hoặc 51E-316.14). Tuyệt đối không thêm văn bản khác." }
                 ]
+            },
+            config: {
+                thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
             }
         });
 
