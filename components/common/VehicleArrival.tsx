@@ -234,7 +234,7 @@ const VehicleArrival: React.FC = () => {
         const base64Data = imageUrl.split(',')[1];
         
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: 'gemini-3.1-flash-lite',
             contents: {
                 parts: [
                     { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
