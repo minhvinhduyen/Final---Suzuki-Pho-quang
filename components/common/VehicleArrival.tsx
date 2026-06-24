@@ -157,12 +157,66 @@ const VehicleArrival: React.FC = () => {
   const handleCaptureAndScan = async () => {
       if (!videoRef.current) return;
 
+      const video = videoRef.current;
       const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      
+      // 1. Lấy kích thước thực tế của video và kích thước hiển thị
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      const displayWidth = video.clientWidth;
+      const displayHeight = video.clientHeight;
+      
+      // 2. Tính toán tỷ lệ để xử lý object-cover
+      const videoRatio = videoWidth / videoHeight;
+      const displayRatio = displayWidth / displayHeight;
+      
+      let renderWidth, renderHeight, offsetX = 0, offsetY = 0;
+      if (videoRatio > displayRatio) {
+          // Video rộng hơn màn hình hiển thị -> bị cắt 2 bên
+          renderHeight = displayHeight;
+          renderWidth = displayHeight * videoRatio;
+          offsetX = (renderWidth - displayWidth) / 2;
+      } else {
+          // Video cao hơn màn hình hiển thị -> bị cắt trên dưới
+          renderWidth = displayWidth;
+          renderHeight = displayWidth / videoRatio;
+          offsetY = (renderHeight - displayHeight) / 2;
+      }
+
+      // 3. Xác định vị trí khung ngắm (w-72 = 288px, h-48 = 192px)
+      const frameWidth = 288; 
+      const frameHeight = 192;
+      const frameX = (displayWidth - frameWidth) / 2;
+      const frameY = (displayHeight - frameHeight) / 2;
+
+      // 4. Tính toán tọa độ cắt trên video gốc (Cropping)
+      const scale = videoWidth / renderWidth;
+      const sourceX = (frameX + offsetX) * scale;
+      const sourceY = (frameY + offsetY) * scale;
+      const sourceWidth = frameWidth * scale;
+      const sourceHeight = frameHeight * scale;
+
+      // 5. Thiết lập độ phân giải mục tiêu (Downscaling)
+      // Giảm xuống mức 480p (chiều rộng 640px) là đủ để AI đọc chính xác
+      const targetWidth = 640; 
+      const targetHeight = (targetWidth * sourceHeight) / sourceWidth;
+
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
       const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoRef.current, 0, 0);
-      const imageUrl = canvas.toDataURL('image/jpeg');
+      if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(
+              video,
+              sourceX, sourceY, sourceWidth, sourceHeight, // Vùng cắt
+              0, 0, targetWidth, targetHeight             // Vùng vẽ (đã scale)
+          );
+      }
+      
+      // 6. Chuyển sang Base64 với chất lượng JPEG 0.8 để tối ưu dung lượng
+      const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
       
       setCapturedImage(imageUrl);
       stopStream();
