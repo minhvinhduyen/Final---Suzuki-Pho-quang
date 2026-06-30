@@ -97,8 +97,13 @@ export const fetchAllData = async () => {
 };
 
 // NEW: Lightweight data fetch (Jobs, Users, Bays only) - No Locking
-export const fetchFastData = async () => {
-    return await callApi('fetchFastData');
+export const fetchFastData = async (startDate?: string, endDate?: string) => {
+    return await callApi('fetchFastData', { startDate, endDate });
+};
+
+// NEW: Fetch older jobs only
+export const fetchOlderJobs = async (startDate: string, endDate: string) => {
+    return await callApi('fetchOlderJobs', { startDate, endDate });
 };
 
 // NEW: Heavyweight data fetch (Vehicles only) - No Locking

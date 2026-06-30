@@ -16,6 +16,8 @@ interface AppState {
   isLoading: boolean;
   error: string | null;
   logoUrl: string;
+  oldestLoadedDate: string;
+  isLoadingOlder: boolean;
 }
 
 type Action =
@@ -35,7 +37,9 @@ type Action =
   | { type: 'ADD_VEHICLE'; payload: Vehicle }
   | { type: 'UPDATE_VEHICLE'; payload: Vehicle }
   | { type: 'SET_TIMELINE_FULLSCREEN'; payload: boolean }
-  | { type: 'SET_LOGO'; payload: string };
+  | { type: 'SET_LOGO'; payload: string }
+  | { type: 'APPEND_OLDER_JOBS'; payload: { jobs: Job[], oldestDate: string } }
+  | { type: 'SET_LOADING_OLDER'; payload: boolean };
 
 const initialState: AppState = {
   jobs: [],
@@ -46,6 +50,8 @@ const initialState: AppState = {
   isLoading: true,
   error: null,
   logoUrl: localStorage.getItem('app_custom_logo') || DEFAULT_LOGO,
+  oldestLoadedDate: (() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString(); })(),
+  isLoadingOlder: false,
 };
 
 
@@ -97,6 +103,18 @@ const appReducer = (state: AppState, action: Action): AppState => {
         return { ...state, isTimelineFullScreen: action.payload };
     case 'SET_LOGO':
         return { ...state, logoUrl: action.payload };
+    case 'SET_LOADING_OLDER':
+        return { ...state, isLoadingOlder: action.payload };
+    case 'APPEND_OLDER_JOBS':
+        // Filter out duplicate jobs when appending
+        const existingJobIds = new Set(state.jobs.map(j => j.id));
+        const newJobs = action.payload.jobs.filter((j: Job) => !existingJobIds.has(j.id));
+        return {
+            ...state,
+            jobs: [...newJobs, ...state.jobs],
+            oldestLoadedDate: action.payload.oldestDate,
+            isLoadingOlder: false,
+        };
     default:
       return state;
   }
@@ -119,6 +137,7 @@ interface AppContextType {
   setLogo: (base64String: string) => void;
   resetLogo: () => void;
   importVehicles: (vehicles: Vehicle[]) => Promise<void>;
+  loadMoreOldJobs: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -181,7 +200,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             // 2. Heavy Data: Vehicles (Background list)
             // Backend will not lock these reads, allowing for concurrency.
             const [fastData, vehicleData] = await Promise.all([
-                apiService.fetchFastData(),
+                apiService.fetchFastData(state.oldestLoadedDate),
                 apiService.fetchVehicles()
             ]);
 
@@ -209,7 +228,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // This prevents the "Server is busy" error caused by reading the huge Vehicle sheet repeatedly.
   const refreshData = useCallback(async () => {
     try {
-        const data: any = await apiService.fetchFastData();
+        const data: any = await apiService.fetchFastData(state.oldestLoadedDate);
         dispatch({ 
             type: 'SET_ALL_DATA', 
             payload: { 
@@ -387,6 +406,29 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       });
   }, [dispatch]);
 
+  const loadMoreOldJobs = useCallback(async () => {
+    dispatch({ type: 'SET_LOADING_OLDER', payload: true });
+    try {
+        const currentOldest = new Date(state.oldestLoadedDate);
+        const newOldest = new Date(currentOldest);
+        newOldest.setDate(newOldest.getDate() - 30);
+        
+        const data: any = await apiService.fetchOlderJobs(newOldest.toISOString(), currentOldest.toISOString());
+        
+        dispatch({ 
+            type: 'APPEND_OLDER_JOBS', 
+            payload: { 
+                jobs: hydrateJobsAfterFetch(data.jobs),
+                oldestDate: newOldest.toISOString(),
+            } 
+        });
+    } catch (e) {
+        console.error("Failed to load older jobs:", e);
+        dispatch({ type: 'SET_LOADING_OLDER', payload: false });
+        alert("Lỗi khi tải dữ liệu cũ: " + (e as Error).message);
+    }
+  }, [dispatch, state.oldestLoadedDate]);
+
   return (
     <AppContext.Provider value={{ 
         state, 
@@ -404,7 +446,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         refreshData,
         setLogo,
         resetLogo,
-        importVehicles
+        importVehicles,
+        loadMoreOldJobs
     }}>
       {children}
     </AppContext.Provider>
