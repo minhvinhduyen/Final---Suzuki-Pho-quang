@@ -49,6 +49,9 @@ const BodyShopCalendar: React.FC<BodyShopCalendarProps> = ({ jobs, onJobClick = 
   const [timeIndicatorPosition, setTimeIndicatorPosition] = useState(-1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+
   const firstDayOfView = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const oldestDate = new Date(state.oldestLoadedDate);
   oldestDate.setHours(0, 0, 0, 0);
