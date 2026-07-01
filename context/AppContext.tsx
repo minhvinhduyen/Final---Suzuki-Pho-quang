@@ -264,7 +264,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         console.error("Manual data refresh failed:", e);
         throw e;
     }
-  }, [dispatch, state.vehicles]); // Dependency on state.vehicles ensures we don't lose them
+  }, [dispatch, state.vehicles, state.oldestLoadedDate]); // Dependency on state.vehicles ensures we don't lose them, oldestLoadedDate ensures we fetch back to what was loaded
 
   // Logic tự động lưu xe mới hoặc cập nhật thông tin xe
   // MOVED UP: Để addJob và updateJob có thể gọi được
