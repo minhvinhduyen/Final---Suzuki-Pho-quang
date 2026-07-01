@@ -124,7 +124,7 @@ const TimelineFilter: React.FC<TimelineFilterProps> = ({ jobs, filters, onFilter
                   </div>
               </div>
               <button
-                  onClick={loadMoreOldJobs}
+                  onClick={() => loadMoreOldJobs(filters.date)}
                   disabled={state.isLoadingOlder}
                   className="ml-4 flex-shrink-0 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition duration-200 disabled:opacity-50 flex items-center shadow"
               >
@@ -138,7 +138,7 @@ const TimelineFilter: React.FC<TimelineFilterProps> = ({ jobs, filters, onFilter
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                   )}
-                  {state.isLoadingOlder ? 'Đang tải...' : 'Tải thêm 30 ngày trước'}
+                  {state.isLoadingOlder ? 'Đang tải...' : 'Tải dữ liệu cho ngày này'}
               </button>
           </div>
       )}

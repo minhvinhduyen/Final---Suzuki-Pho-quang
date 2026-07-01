@@ -137,7 +137,7 @@ interface AppContextType {
   setLogo: (base64String: string) => void;
   resetLogo: () => void;
   importVehicles: (vehicles: Vehicle[]) => Promise<void>;
-  loadMoreOldJobs: () => Promise<void>;
+  loadMoreOldJobs: (targetDateStr: string) => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -148,6 +148,27 @@ interface AppProviderProps {
 
 const safeNewDate = (dateString: any): Date | undefined => {
     if (!dateString) return undefined;
+    
+    // Thử parse theo định dạng DD/MM/YYYY hoặc DD/MM/YYYY HH:mm:ss của Google Sheet cũ
+    if (typeof dateString === 'string' && dateString.includes('/')) {
+        const parts = dateString.split(/[\sT]+/); // Tách ngày và giờ
+        const datePart = parts[0];
+        const timePart = parts[1] || '00:00:00';
+        
+        const dateParts = datePart.split('/');
+        // Kiểm tra xem có đúng định dạng DD/MM/YYYY không (năm có 4 chữ số)
+        if (dateParts.length === 3 && dateParts[2].length === 4) {
+             // JS Date nhận định dạng YYYY-MM-DD
+             const isoString = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}`;
+             const d = new Date(isoString);
+             if (!isNaN(d.getTime())) return d;
+        }
+        // Trường hợp MM/DD/YYYY
+        if (dateParts.length === 3 && dateParts[0].length <= 2 && dateParts[2].length === 4) {
+             // js fallback
+        }
+    }
+
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? undefined : date;
 };
@@ -406,12 +427,29 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       });
   }, [dispatch]);
 
-  const loadMoreOldJobs = useCallback(async () => {
+  const loadMoreOldJobs = useCallback(async (targetDateStr: string) => {
     dispatch({ type: 'SET_LOADING_OLDER', payload: true });
     try {
         const currentOldest = new Date(state.oldestLoadedDate);
-        const newOldest = new Date(currentOldest);
-        newOldest.setDate(newOldest.getDate() - 30);
+        
+        // Cập nhật: Tính toán khoảng thời gian cần tải để bao phủ được targetDate
+        let targetDate = new Date(targetDateStr);
+        if (isNaN(targetDate.getTime())) {
+            targetDate = new Date();
+        }
+        
+        // Đảm bảo targetDate là thời điểm bắt đầu của ngày đó
+        targetDate.setHours(0, 0, 0, 0);
+
+        // Nếu targetDate vẫn mới hơn currentOldest thì không cần tải (nhưng thường không xảy ra vì đã check ở UI)
+        if (targetDate >= currentOldest) {
+            dispatch({ type: 'SET_LOADING_OLDER', payload: false });
+            return;
+        }
+
+        // Tải toàn bộ dữ liệu từ targetDate (trừ đi 1 ngày dự phòng) đến currentOldest
+        const newOldest = new Date(targetDate);
+        newOldest.setDate(newOldest.getDate() - 1);
         
         const data: any = await apiService.fetchOlderJobs(newOldest.toISOString(), currentOldest.toISOString());
         
