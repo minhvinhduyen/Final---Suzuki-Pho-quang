@@ -59,15 +59,47 @@ const appReducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
     case 'FETCH_DATA_START':
         return { ...state, isLoading: true, error: null };
-    case 'FETCH_DATA_SUCCESS':
-    case 'SET_ALL_DATA': {
+    case 'FETCH_DATA_SUCCESS': {
         return { 
             ...state, 
-            isLoading: action.type === 'FETCH_DATA_SUCCESS' ? false : state.isLoading,
+            isLoading: false,
             jobs: action.payload.jobs,
             bays: action.payload.bays,
             users: action.payload.users,
             vehicles: action.payload.vehicles || [],
+        };
+    }
+    case 'SET_ALL_DATA': {
+        const newJobIds = new Set(action.payload.jobs.map((j: Job) => j.id));
+        
+        // Find the oldest date among the newly fetched jobs to determine the actual fetch boundary
+        let actualOldestFetched = new Date();
+        action.payload.jobs.forEach((j: Job) => {
+            const d = j.plannedStartTime || j.actualStartTime;
+            if (d && d < actualOldestFetched) {
+                actualOldestFetched = d;
+            }
+        });
+        // Add a 1-day buffer
+        actualOldestFetched.setDate(actualOldestFetched.getDate() - 1);
+
+        // Preserve jobs that were already loaded but not returned by the server,
+        // ONLY IF they are older than the server's actual fetch boundary.
+        // This prevents data loss if the backend script limits fetches to 30 days.
+        const preservedOlderJobs = state.jobs.filter(j => {
+            if (newJobIds.has(j.id)) return false;
+            const d = j.plannedStartTime || j.actualStartTime;
+            if (d && d < actualOldestFetched) return true;
+            return false;
+        });
+
+        return {
+            ...state,
+            users: action.payload.users,
+            bays: action.payload.bays,
+            jobs: [...action.payload.jobs, ...preservedOlderJobs],
+            vehicles: action.payload.vehicles || [],
+            isInitialized: true,
         };
     }
     case 'FETCH_DATA_FAILURE':
